@@ -1,0 +1,16 @@
+# Static Analysis
+pre-commit
+# Configuration
+python-dotenv
+# DB
+pymongo
+# Test
+pytest
+httpx
+# Profile
+memory_profiler
+line_profiler
+matplotlib
+# boto3
+boto3_type_annotations
+boto3
