@@ -2,43 +2,48 @@
 ## Module Design
 ```mermaid
 classDiagram
-    class DataLoader {
+    note "{Attr: Value} 형식의 dictionary"
+    class Driver {
         <<interface>>
-        + load(src: DBType, rel_name: str, backup: datetime) List[dict]
+        + read(str rel, int n) Iterator[dict]
+        + write(str rel, Iterator[dict] updated) void
     }
-    class DataTransformer {
+    class Migrator {
         <<interface>>
-        + transform(src: DBType, desc: DBType, rel_name: str, data: List[dict]) List[dict]
+        + migrate() void
     }
-    class DataUploader {
-        <<interface>>
-        + upload(desc: DBType, rel_name: str, data: List[dict]) NoReturn
+    class DocumentToRelationMigrator {
+        - Driver srcDriver
+        - Driver destDriver
+        + migrate() void
     }
-    class DBType {
-        <<enumeration>>
-        MARIADB
-        MONGODB
+    class RelationToDocumentMigrator {
+        - Driver srcDriver
+        - Driver destDriver
+        + migrate() void
     }
-    class Notice {
-        <<interface>>
-        + notice(message: str)
-    }
-    class Main {
-        - DataLoader loader
-        - DataTransformer transformer
-        - DataUploader uploader
-        - List[Notice] notices
-        + execute(src: DBType, desc: DBType, rel_name: str, backup: datetime) NoReturn
-    }
-    Main <-- DataLoader: load data from s3 regard to DBType and rel_name.
-    Main <-- DataTransformer: transform data from src to desc DBType.
-    Main <-- DataUploader: upload data to desc
-    Main <.. DBType: specify src and desc
-    Main *-- Notice: notice results
-    Notice <|-- SlackNotice
-
+    MongoDriver ..|> Driver
+    MariaDriver ..|> Driver
+    DocumentToRelationMigrator ..|> Migrator
+    RelationToDocumentMigrator ..|> Migrator
+    DocumentToRelationMigrator --> Driver: use
+    RelationToDocumentMigrator --> Driver: use
+    DocumentToRelationMigrator ..> MongoDriver: srcDriver
+    DocumentToRelationMigrator ..> MariaDriver: destDriver
+    RelationToDocumentMigrator ..> MariaDriver: srcDriver
+    RelationToDocumentMigrator ..> MongoDriver: destDriver
 ```
-## Details
-- [DataLoader](modules/data-loader.md)
-- [DataTransformer](modules/data-transformer.md)
-- [DataUploader](modules/data-uploader.md)
+```mermaid
+sequenceDiagram
+    actor Scheduler
+    participant DocumentToRelationMigrator
+    participant MongoDriver
+    participant MariaDriver
+    Scheduler ->>+ DocumentToRelationMigrator: Migrate Mongo to Maria
+    DocumentToRelationMigrator ->>+ MongoDriver: Read Data
+    MongoDriver -->>- DocumentToRelationMigrator: OK
+    DocumentToRelationMigrator ->> DocumentToRelationMigrator: Convert Format
+    DocumentToRelationMigrator ->>+ MariaDriver: Write Data
+    MariaDriver -->>- DocumentToRelationMigrator: OK
+    DocumentToRelationMigrator -->>- Scheduler: OK
+```
