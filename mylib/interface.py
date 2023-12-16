@@ -14,5 +14,9 @@ class Driver(metaclass=ABCMeta):
 
 class Migrator(metaclass=ABCMeta):
     @abstractmethod
-    def migrate(self) -> None:
+    def migrate(self, rel: str) -> None:
+        pass
+
+    @abstractmethod
+    def _convert(self, rel: str, src: Iterable[dict]) -> Iterable[dict]:
         pass

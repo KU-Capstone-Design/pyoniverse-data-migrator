@@ -31,6 +31,7 @@ class MariaDriver(Driver):
         # self.__client.commit()
 
     def __make_query(self, rel: str, datum: dict) -> str:
+        datum = {k: v for k, v in datum.items() if v is not None}
         attrs = ",".join(datum.keys())
         vals = []
         for val in datum.values():

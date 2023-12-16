@@ -10,7 +10,8 @@ classDiagram
     }
     class Migrator {
         <<interface>>
-        + migrate() void
+        + migrate(str rel) void
+        # convert(str rel, Iterator src) Iterator
     }
     class DocumentToRelationMigrator {
         - Driver srcDriver
