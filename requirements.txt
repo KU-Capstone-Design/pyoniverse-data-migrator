@@ -4,6 +4,7 @@ pre-commit
 python-dotenv
 # DB
 pymongo
+pymysql
 # Test
 pytest
 httpx

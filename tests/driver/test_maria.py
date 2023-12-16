@@ -1,0 +1,18 @@
+import os
+
+from mylib.driver.maria import MariaDriver
+from tests.conftest import not_raises
+
+
+def test_read(maria_client):
+    driver = MariaDriver(client=maria_client)
+    data = driver.read(os.getenv("MARIA_DB"), "categories", 5)
+    data = list(data)
+    assert len(data) == 5
+
+
+def test_write(maria_client):
+    driver = MariaDriver(client=maria_client)
+    data = driver.read(os.getenv("MARIA_DB"), "products", 100)
+    with not_raises():
+        driver.write(os.getenv("MARIA_DB"), "products", data)
