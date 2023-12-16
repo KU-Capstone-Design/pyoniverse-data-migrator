@@ -7,24 +7,19 @@ title: Pyoniverse Dashboard Architecture
 ---
 C4Component
     title Pyoniverse Dashboard Architecture
-    Container_Boundary(migration_boundary, "Data Migration") {
-        Component(migrator, "Migrator", "", "Migrate from documentDB/rDB to rDB/documentDB")
-        ComponentDb(tmp_storage, "S3", "Dump/Load Data Storage")
-        Rel(document_db, tmp_storage, "Dump")
-        Rel(rdb, tmp_storage, "Dump")
-        Rel(tmp_storage, migrator, "Load & Convert format")
-        Rel(migrator, document_db, "Update Data")
-        Rel(migrator, rdb, "Update Data")
-        UpdateRelStyle(document_db, tmp_storage, $textColor="red", $lineColor="green")
-        UpdateRelStyle(rdb, tmp_storage, $textColor="red", $lineColor="green")
-        UpdateRelStyle(tmp_storage, migrator, $textColor="red", $lineColor="green")
-        UpdateRelStyle(migrator, document_db, $textColor="red", $lineColor="green")
-        UpdateRelStyle(migrator, rdb, $textColor="red", $lineColor="green")
-    }
     Container_Boundary(web_boundary, "Dashboard Web Application") {
         ComponentDb(rdb, "RDB", "MariaDB", "Dashboard DB")
     }
+    Container_Boundary(migration_boundary, "Data Migration") {
+        Component(mariaDriver, "MariaDriver", "", "Read/Write from/to MariaDB")
+        Component(migrator, "Migrator", "", "Migrate from documentDB/rDB to rDB/documentDB")
+        Component(mongoDriver, "MongoDriver", "", "Read/Write from/to MongoDB")
+        BiRel(mongoDriver, documentDb, "Access DB")
+        BiRel(mariaDriver, rdb, "Access DB")
+        BiRel(mongoDriver, migrator, "Read/Write Data")
+        BiRel(mariaDriver, migrator, "Read/Write Data")
+    }
     Container_Boundary(service_boundary, "Pyoniverse Application") {
-        ComponentDb(document_db, "DocumentDB", "MongoDB", "Service DB")
+        ComponentDb(documentDb, "DocumentDB", "MongoDB", "Service DB")
     }
 ```

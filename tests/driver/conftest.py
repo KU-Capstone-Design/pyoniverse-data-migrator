@@ -1,20 +1,9 @@
 import logging
 import os
-from contextlib import contextmanager
 
 import pytest
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
-
-
-@pytest.fixture(scope="session")
-def env():
-    import os
-    import dotenv
-
-    while "tests" not in os.listdir():
-        os.chdir("..")
-    dotenv.load_dotenv()
 
 
 @pytest.fixture(scope="session")
@@ -44,14 +33,3 @@ def maria_client(env):
     )
     yield client
     client.close()
-
-
-@contextmanager
-def not_raises():
-    try:
-        yield
-    except Exception as e:
-        logging.error(e)
-        assert False
-    else:
-        assert True
