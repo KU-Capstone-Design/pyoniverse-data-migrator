@@ -1,3 +1,6 @@
+import logging
+from contextlib import contextmanager
+
 import pytest
 
 
@@ -9,3 +12,14 @@ def env():
     while "tests" not in os.listdir():
         os.chdir("..")
     dotenv.load_dotenv()
+
+
+@contextmanager
+def not_raises():
+    try:
+        yield
+    except Exception as e:
+        logging.error(e)
+        assert False
+    else:
+        assert True
