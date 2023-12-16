@@ -13,6 +13,6 @@ def test_read(maria_client):
 
 def test_write(maria_client):
     driver = MariaDriver(client=maria_client)
-    data = driver.read(os.getenv("MARIA_DB"), "products", 100)
+    data = [{"id": 1, "name": "test3"}]
     with not_raises():
-        driver.write(os.getenv("MARIA_DB"), "products", data)
+        driver.write(os.getenv("MARIA_DB"), "tests", data)
