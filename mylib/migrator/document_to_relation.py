@@ -1,3 +1,4 @@
+from itertools import tee
 from typing import Iterable
 
 from mylib.interface import Driver, Migrator
@@ -9,7 +10,27 @@ class DocumentToRelationMigrator(Migrator):
         self.__dest_driver = dest_driver
 
     def migrate(self, rel: str) -> None:
-        pass
+        src = self.__src_driver.read(rel)
+        match rel:
+            case "products":
+                srcs = tee(src, 5)
+                rel_name = "products"
+                products_dest = self._convert(rel_name, srcs[0])
+                self.__dest_driver.write(rel_name, products_dest)
+                rel_name = "product_bests"
+                product_bests_dest = self._convert(rel_name, srcs[1])
+                self.__dest_driver.write(rel_name, product_bests_dest)
+                rel_name = "product_bests_product_events"
+                product_bests_product_events = self._convert(rel_name, srcs[2])
+                self.__dest_driver.write(rel_name, product_bests_product_events)
+                rel_name = "product_brands"
+                product_brands = self._convert(rel_name, srcs[3])
+                self.__dest_driver.write(rel_name, product_brands)
+                rel_name = "product_brands_product_events"
+                product_brands_product_events = self._convert(rel_name, srcs[4])
+                self.__dest_driver.write(rel_name, product_brands_product_events)
+            case _:
+                raise RuntimeError(f"{rel}은 지원하지 않습니다.")
 
     def _convert(self, rel: str, src: Iterable[dict]) -> Iterable[dict]:
         match rel:
@@ -17,9 +38,9 @@ class DocumentToRelationMigrator(Migrator):
                 for s in src:
                     yield {
                         "id": int(s["id"]),
-                        "name": s["name"],
-                        "category_id": int(s["category"]),
-                        "description": s["description"],
+                        "name": s["name"].replace('"', '\\"'),
+                        "category_id": int(s["category"] or 0),
+                        "description": s["description"].replace('"', '\\"') if s["description"] else None,
                         "price": s["price"],
                         "image": s["image"],
                         "good_count": int(s["good_count"]),
@@ -27,7 +48,7 @@ class DocumentToRelationMigrator(Migrator):
                     }
             case "product_bests":
                 for s in src:
-                    yield {"product_id": int(s["id"]), "brand": int(s["best"]["brand"]), "price": s["best"]["price"]}
+                    yield {"product_id": int(s["id"]), "brand_id": int(s["best"]["brand"]), "price": s["best"]["price"]}
             case "product_bests_product_events":
                 for s in src:
                     for e in s["best"]["events"]:
@@ -38,8 +59,8 @@ class DocumentToRelationMigrator(Migrator):
                         yield {
                             "product_id": int(s["id"]),
                             "brand_id": int(b["id"]),
-                            "price": int(b["price"]["value"]),
-                            "event_price": int(b["price"]["discounted_value"]),
+                            "price": b["price"]["value"],
+                            "event_price": b["price"]["discounted_value"],
                         }
             case "product_brands_product_events":
                 for s in src:

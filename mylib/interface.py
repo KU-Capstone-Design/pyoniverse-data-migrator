@@ -4,11 +4,14 @@ from typing import Iterable
 
 class Driver(metaclass=ABCMeta):
     @abstractmethod
-    def read(self, db: str, rel: str, n: int) -> Iterable[dict]:
+    def read(self, rel: str, n: int = None) -> Iterable[dict]:
+        """
+        limit를 지정하지 않으면 모든 문서를 가져온다.
+        """
         pass
 
     @abstractmethod
-    def write(self, db: str, rel: str, updated: Iterable[dict]) -> None:
+    def write(self, rel: str, updated: Iterable[dict]) -> None:
         pass
 
 

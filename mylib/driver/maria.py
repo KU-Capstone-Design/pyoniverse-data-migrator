@@ -1,3 +1,4 @@
+import logging
 from typing import Iterable, List
 
 import pymysql
@@ -9,26 +10,34 @@ class MariaDriver(Driver):
     def __init__(self, client: pymysql.Connect):
         self.__client = client
 
-    def read(self, db: str, rel: str, n: int) -> Iterable[dict]:
+    def read(self, rel: str, n: int = None) -> Iterable[dict]:
         with self.__client.cursor() as cursor:
-            query = f"""
-            SELECT * FROM {rel}
-            LIMIT {n};
-            """
+            if n is not None:
+                query = f"""
+                SELECT * FROM {rel}
+                LIMIT {n};
+                """
+            else:
+                query = f"""
+                SELECT * FROM {rel};
+                """
             cursor.execute(query)
             for _ in range(cursor.rowcount):
                 yield cursor.fetchone()
 
-    def write(self, db: str, rel: str, updated: Iterable[dict]) -> None:
+    def write(self, rel: str, updated: Iterable[dict]) -> None:
         queries: List[str] = [self.__make_query(rel, d) for d in updated]
         with self.__client.cursor() as cursor:
             cursor.execute("SET SESSION autocommit=0;")
             cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;")
             cursor.execute("begin;")
             for query in queries:
-                cursor.execute(query)
+                try:
+                    cursor.execute(query)
+                except Exception as e:
+                    cursor.execute("rollback;")
+                    raise RuntimeError(f"쿼리 실행에 문제가 생겼습니다: {query}")
             cursor.execute("commit;")
-        # self.__client.commit()
 
     def __make_query(self, rel: str, datum: dict) -> str:
         datum = {k: v for k, v in datum.items() if v is not None}

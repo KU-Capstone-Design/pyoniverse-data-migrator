@@ -14,20 +14,20 @@ class MongoDriver(Driver):
     def __init__(self, client: MongoClient):
         self.__client = client
 
-    def read(self, db: str, rel: str, n: int) -> Iterable[dict]:
-        db = self.__client.get_database(db, read_preference=ReadPreference.SECONDARY_PREFERRED)
+    def read(self, rel: str, n: int = 0) -> Iterable[dict]:
+        db = self.__client.get_database(os.getenv("MONGO_DB"), read_preference=ReadPreference.SECONDARY_PREFERRED)
         coll = db.get_collection(rel)
         data = coll.find(projection={"_id": False, "created_at": False, "updated_at": False}).sort("id", 1).limit(n)
         return data
 
-    def write(self, db: str, rel: str, updated: Iterable[dict]) -> None:
+    def write(self, rel: str, updated: Iterable[dict]) -> None:
         """
         SQS로 데이터를 보낸다.
         """
         updated = list(updated)
         for idx in range(0, len(updated), 100):
             message = Message(
-                db_name=db,
+                db_name=os.getenv("MONGO_DB"),
                 rel_name=rel,
                 origin="migrator",
                 action="UPDATE",
