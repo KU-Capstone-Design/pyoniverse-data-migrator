@@ -5,8 +5,8 @@ classDiagram
     note "{Attr: Value} 형식의 dictionary"
     class Driver {
         <<interface>>
-        + read(str rel, int n) Iterator[dict]
-        + write(str rel, Iterator[dict] updated) void
+        + read(str db, str rel, int n) Iterator[dict]
+        + write(str db, str rel, Iterator[dict] updated) void
     }
     class Migrator {
         <<interface>>
