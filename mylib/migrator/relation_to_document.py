@@ -1,5 +1,6 @@
 from typing import Iterable
 
+import pandas as pd
 from pandas import DataFrame
 
 from mylib.interface import Driver, Migrator
@@ -46,6 +47,37 @@ class RelationToDocumentMigrator(Migrator):
                         "best": {
                             "events": sorted(val["event_id"]),
                         },
+                    }
+            case "product_brands":
+                df = DataFrame(src)
+                df = df.groupby(["product_id", "brand_id"], as_index=False).agg(lambda x: x.iloc[0])
+                df["brands"] = df.apply(
+                    lambda x: {
+                        "id": int(x["brand_id"]),
+                        "price": {
+                            "value": x["price"],
+                            "discounted_value": x["event_price"] if pd.notna(x["event_price"]) else None,
+                        },
+                    },
+                    axis=1,
+                )
+                df = df.groupby("product_id").agg({"brands": list})
+                dest = df.to_dict("index")
+                for key, val in dest.items():
+                    yield {
+                        "id": key,
+                        **val,
+                    }
+            case "product_brands_product_events":
+                df = DataFrame(src)
+                df = df.groupby(["product_id", "brand_id"], as_index=False).agg({"event_id": list})
+                df["brands"] = df.apply(lambda x: {"id": x["brand_id"], "events": x["event_id"]}, axis=1)
+                df = df.groupby("product_id").agg({"brands": list})
+                dest = df.to_dict("index")
+                for key, val in dest.items():
+                    yield {
+                        "id": key,
+                        **val,
                     }
 
             case _:
