@@ -32,20 +32,12 @@ jobs:
         run: |
           echo "MONGO_URI=${{ secrets.MONGO_URI }}" >> .env
           echo "MONGO_DB=${{ secrets.MONGO_SERVICE_DB_DEV }}" >> .env
-          echo "STAGE=${{ env.STAGE }}" >> .env
-          echo "BUCKET=${{ secrets.S3_TMP_BUCKET }}" >> .env
-          echo "BUCKET_KEY=${{ secrets.S3_DEV_KEY }}" >> .env
-
-      - name: Preload Environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          cache: 'pip'
-
-      - name: Test
-        shell: bash
-        run: |
-          python -m pytest -v
+          echo "MARIA_HOST=${{ secrets.MARIA_HOST }}" >> .env
+          echo "MARIA_PORT=${{ secrets.MARIA_PORT }}" >> .env
+          echo "MARIA_USER=${{ secrets.MARIA_USER }}" >> .env
+          echo "MARIA_PASSWORD=${{ secrets.MARIA_PASSWORD }}" >> .env
+          echo "MARIA_DB=${{ secrets.MARIA_DB }}" >> .env
+          echo "DB_QUEUE_NAME=${{ secrets.DB_SQS_NAME_DEV }}" >> .env
 
       - name: Build and Push
         uses: docker/build-push-action@v5

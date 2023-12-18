@@ -14,7 +14,6 @@ notebooks
 **/*.md
 **/*.ini
 **/*.yaml
-requirements.txt
 **/*.DS_Store
 **/*.idea
 **/*.sh
