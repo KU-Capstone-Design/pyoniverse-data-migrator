@@ -36,7 +36,7 @@ jobs:
           echo "MARIA_PORT=${{ secrets.MARIA_PORT }}" >> .env
           echo "MARIA_USER=${{ secrets.MARIA_USER }}" >> .env
           echo "MARIA_PASSWORD=${{ secrets.MARIA_PASSWORD }}" >> .env
-          echo "MARIA_DB=${{ secrets.MARIA_DB }}" >> .env
+          echo "MARIA_DB=${{ secrets.MARIA_DB_DEV }}" >> .env
           echo "DB_QUEUE_NAME=${{ secrets.DB_SQS_NAME_DEV }}" >> .env
 
       - name: Build and Push
