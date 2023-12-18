@@ -1,9 +1,11 @@
 from itertools import tee
 
 import pandas as pd
+import pytest
 from pandas import DataFrame
 
 from mylib.migrator.relation_to_document import RelationToDocumentMigrator
+from tests.conftest import not_raises
 
 
 def test_convert_format_product(maria_driver, mongo_driver):
@@ -26,7 +28,7 @@ def test_convert_format_product_bests(maria_driver, mongo_driver):
     dest_data = migrator._convert("product_bests", src_data)
     for s, d in zip(sorted(src_data, key=lambda x: x["product_id"]), sorted(dest_data, key=lambda x: x["id"])):
         assert d["best"]["brand"] == int(d["brand_id"])
-        assert d["price"] == s["best"]["price"]
+        assert d["best"]["price"] == s["best"]["price"]
 
 
 def test_convert_format_product_bests_product_events(maria_driver, mongo_driver):
@@ -77,3 +79,10 @@ def test_convert_format_product_brands_product_events(maria_driver, mongo_driver
     for s, d in zip(sorted(expected, key=lambda x: x["id"]), sorted(dest_data, key=lambda x: x["id"])):
         for sb, db in zip(sorted(s["brands"], key=lambda x: x["id"]), sorted(d["brands"], key=lambda x: x["id"])):
             assert sorted(sb["events"]) == db["events"]
+
+
+@pytest.mark.skip("시간이 오래걸림. 직접 수행하여 테스트한다.")
+def test_migrate(maria_driver, mongo_driver):
+    migrator = RelationToDocumentMigrator(src_driver=maria_driver, dest_driver=mongo_driver)
+    with not_raises():
+        migrator.migrate("products")

@@ -12,7 +12,39 @@ class RelationToDocumentMigrator(Migrator):
         self.__dest_driver = dest_driver
 
     def migrate(self, rel: str) -> None:
-        pass
+        match rel:
+            case "products":
+                # 1. products
+                rel_name = "products"
+                src = self.__src_driver.read(rel_name)
+                product_dest = self._convert(rel_name, src)
+                # 2. product_bests
+                rel_name = "product_bests"
+                src = self.__src_driver.read(rel_name)
+                product_best_dest = self._convert(rel_name, src)
+                # 3. product_bests_product_events
+                rel_name = "product_bests_product_events"
+                src = self.__src_driver.read(rel_name)
+                product_bests_product_events_dest = self._convert(rel_name, src)
+                # 4. product_brands
+                rel_name = "product_brands"
+                src = self.__src_driver.read(rel_name)
+                product_brands_dest = self._convert(rel_name, src)
+                # 5. product_brands_product_events
+                rel_name = "product_brands_product_events"
+                src = self.__src_driver.read(rel_name)
+                product_brands_product_events_dest = self._convert(rel_name, src)
+                # 조합
+                dest = self.__make_products(
+                    product_dest,
+                    product_best_dest,
+                    product_bests_product_events_dest,
+                    product_brands_dest,
+                    product_brands_product_events_dest,
+                )
+                self.__dest_driver.write(rel, dest)
+            case _:
+                raise RuntimeError(f"지원하지 않습니다: {rel}")
 
     def _convert(self, rel: str, src: Iterable[dict]) -> Iterable[dict]:
         match rel:
@@ -82,3 +114,38 @@ class RelationToDocumentMigrator(Migrator):
 
             case _:
                 raise RuntimeError(f"{rel}은 지원하지 않습니다.")
+
+    def __make_products(
+        self,
+        product_dest: Iterable[dict],
+        product_best_dest: Iterable[dict],
+        product_bests_product_events_dest: Iterable[dict],
+        product_brands_dest: Iterable[dict],
+        product_brands_product_events_dest: Iterable[dict],
+    ) -> Iterable[dict]:
+        product_best_map = {x["id"]: x["best"] for x in product_best_dest}
+        product_best_events_map = {x["id"]: x["best"] for x in product_bests_product_events_dest}
+        product_brands_map = {x["id"]: x["brands"] for x in product_brands_dest}
+        product_brands_product_events_map = {x["id"]: x["brands"] for x in product_brands_product_events_dest}
+        for product in product_dest:
+            id_ = product["id"]
+            best = product_best_map[id_]
+            if best_event := product_best_events_map.get(id_):
+                best_event = best_event["events"]
+            else:
+                best_event = []
+            brands = product_brands_map[id_]
+            brands_events = product_brands_product_events_map.get(id_, [])
+            # brands 에 event 넣기
+            brands_events_map = {x["id"]: x["events"] for x in brands_events}
+            for brand in brands:
+                brand["events"] = brands_events_map.get(brand["id"], [])
+            res = {
+                **product,
+                "best": {
+                    **best,
+                    "events": best_event,
+                },
+                "brands": brands,
+            }
+            yield res
