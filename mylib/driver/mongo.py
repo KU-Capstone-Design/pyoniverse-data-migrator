@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from dataclasses import asdict
 from typing import Iterable
@@ -40,3 +41,4 @@ class MongoDriver(Driver):
                 QueueUrl=queue_url,
                 MessageBody=json.dumps(asdict(message)),
             )
+            logging.info(f"Send {idx + 100}/{len(updated)}")
