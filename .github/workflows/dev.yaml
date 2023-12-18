@@ -1,0 +1,63 @@
+name: Deploy Migrator
+on:
+  push:
+    branches: [ develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      STAGE: dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Setup env
+        shell: bash
+        run: |
+          echo "MONGO_URI=${{ secrets.MONGO_URI }}" >> .env
+          echo "MONGO_DB=${{ secrets.MONGO_SERVICE_DB_DEV }}" >> .env
+          echo "MARIA_HOST=${{ secrets.MARIA_HOST }}" >> .env
+          echo "MARIA_PORT=${{ secrets.MARIA_PORT }}" >> .env
+          echo "MARIA_USER=${{ secrets.MARIA_USER }}" >> .env
+          echo "MARIA_PASSWORD=${{ secrets.MARIA_PASSWORD }}" >> .env
+          echo "MARIA_DB=${{ secrets.MARIA_DB_DEV }}" >> .env
+          echo "DB_QUEUE_NAME=${{ secrets.DB_SQS_NAME_DEV }}" >> .env
+
+      - name: Build and Push
+        uses: docker/build-push-action@v5
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          DOCKER_IMAGE: pyoniverse-data-migrator
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ env.STAGE }}
+
+      - name: Deploy Alarm
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: C05NYKY1KS6
+          author_name: Github Action
+          fields: repo,commit,message,author,took,workflow
+          mention: here
+          if_mention: failure,cancelled
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: always()
