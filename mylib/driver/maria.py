@@ -51,6 +51,8 @@ class MariaDriver(Driver):
         vals = ",".join(vals)
         updates = []
         for key, val in datum.items():
+            if key == "id":
+                continue
             if isinstance(val, str):
                 updates.append(f'{key}="{val}"')
             else:
